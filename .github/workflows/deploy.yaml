@@ -1,0 +1,42 @@
+name: Deploy Kubernetes Cluster
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+# https://docs.github.com/en/actions/deployment/deploying-to-your-cloud-provider/deploying-to-azure/deploying-to-azure-kubernetes-service
+# https://docs.github.com/en/actions/publishing-packages/about-packaging-with-github-actions
+
+jobs:
+  deploy-bicep:
+    name: Deploy Bicep
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
+
+      - name: Azure Resource Group Deployment
+        uses: azure/powershell@v1
+        env:
+          SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION }}
+          RESOURCEGROUP: ${{ secrets.AZURE_RG }}
+          ADMINS: ${{ secrets.ADMIN_GROUP_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          azPSVersion: "latest"
+          inlineScript: |
+            $Results = New-AzResourceGroupDeployment -Name "aks-$(Get-Date -f yyyyMMddThhmmss)" -ResourceGroupName $Env:RESOURCEGROUP -TemplateFile ./Cluster.bicep -TemplateParameterObject @{ adminId = $Env:ADMINS }
