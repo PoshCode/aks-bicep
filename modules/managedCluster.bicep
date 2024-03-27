@@ -282,10 +282,11 @@ resource cluster 'Microsoft.ContainerService/managedClusters@2024-01-01' = {
       }
     }
     networkProfile: {
-      networkPlugin: 'azure'
-      networkPluginMode: 'overlay'
-      networkDataplane: 'cilium'
-      networkPolicy: 'cilium'
+      // Going to try BYOCNI to use Cilium as the Gateway
+      networkPlugin: 'none'
+      // networkPluginMode: 'overlay'
+      // networkDataplane: 'cilium'
+      // networkPolicy: 'cilium'
       outboundType: 'loadBalancer'
       // This is the cluster load balancer, not the outbound
       loadBalancerSku: 'Standard'
