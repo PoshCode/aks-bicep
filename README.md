@@ -59,3 +59,24 @@ flux bootstrap github --owner PoshCode --repository cluster --path=clusters/posh
 ```
 
 But if you need to customize workload identity, it can get a lot more complex, because you'll need to patch the flux deployment.
+
+## CURRENT STATUS WARNING
+
+I'm playing with Cilium Gateway API, so I've set the network plugin to "none" so that I can take control of the cilium install.
+
+Installing the cilium tools is as simple as downloading the right release from their GitHub release pages and unzipping.
+
+```PowerShell
+Install-GitHubRelease cilium cilium
+Install-GitHubRelease cilium hubble
+```
+
+And installing it into the AKS cluster is just this, using the same `"rg-$name"` value as the resource group deployment:
+
+```PowerShell
+cilium install --version 1.15.3 --set azure.resourceGroup="rg-$name"
+```
+
+If you want to complete the deployment in a single pass, you have to `Import-AzAksCredential` as soon as the cluster shows up in Azure, and then once `kubectl get nodes` shows all your nodes (they won't come up ready, because they won't have a network), you can run the `cilium install` while Azure is showing the Flux deployment is still running (it won't complete successfully until after cilium is installed, so if you don't run the install, it will fail after the time-out, and you'll have to re-run the deployment).
+
+I haven't even tried to automate this, because I'm honestly not sure I'll leave the cilium gateway, and I hope the AKS team will expose settings for this option...
