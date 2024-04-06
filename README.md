@@ -74,9 +74,22 @@ Install-GitHubRelease cilium hubble
 And installing it into the AKS cluster is just this, using the same `"rg-$name"` value as the resource group deployment:
 
 ```PowerShell
-cilium install --version 1.15.3 --set azure.resourceGroup="rg-$name"
+cilium install --version 1.15.3 --set azure.resourceGroup="rg-$name" --set kubeProxyReplacement=true --set gatewayAPI.enabled=true
 ```
 
 If you want to complete the deployment in a single pass, you have to `Import-AzAksCredential` as soon as the cluster shows up in Azure, and then once `kubectl get nodes` shows all your nodes (they won't come up ready, because they won't have a network), you can run the `cilium install` while Azure is showing the Flux deployment is still running (it won't complete successfully until after cilium is installed, so if you don't run the install, it will fail after the time-out, and you'll have to re-run the deployment).
 
-I haven't even tried to automate this, because I'm honestly not sure I'll leave the cilium gateway, and I hope the AKS team will expose settings for this option...
+Currently, I'm running it with prometheus enabled, which is more like:
+
+```PowerShell
+cilium upgrade --version 1.15.3 --set azure.resourceGroup="rg-$name" `
+    --set kubeProxyReplacement=true `
+    --set gatewayAPI.enabled=true `
+    --set hubble.enabled=true `
+    --set prometheus.enabled=true `
+    --set operator.prometheus.enabled=true `
+    --set hubble.metrics.enableOpenMetrics=true `
+    --set hubble.metrics.enabled="{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip\,source_namespace\,source_workload\,destination_ip\,destination_namespace\,destination_workload\,traffic_direction}"
+```
+
+I haven't even tried to automate this, because I'm honestly not sure I'll keep using cilium gateway, and I still hope the AKS team will expose settings for this option.
