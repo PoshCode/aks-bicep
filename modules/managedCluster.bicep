@@ -10,6 +10,13 @@ param location string = resourceGroup().location
 @description('Optional. Tags for this resource. Defaults to resourceGroup().tags')
 param tags object = resourceGroup().tags
 
+@description('Optional. If not set, you must install your own CNI before the cluster will be functional (See README)')
+@allowed(['none', 'azure'])
+param networkPlugin string = 'none'
+
+@description('Optional. If the networkPlugin is azure, you can specify the dataplane as either cilium or azure. Only azure supports Windows.')
+@allowed(['cilium', 'azure'])
+param networkDataplane string = 'azure'
 
 @description('Required. The base version of Kubernetes to use')
 param kubernetesVersion string
@@ -283,10 +290,11 @@ resource cluster 'Microsoft.ContainerService/managedClusters@2024-10-01' = {
     }
     networkProfile: {
       // Going to try BYOCNI to use Cilium as the Gateway
-      networkPlugin: 'none'
-      // networkPluginMode: 'overlay'
-      // networkDataplane: 'cilium'
-      // networkPolicy: 'cilium'
+      networkPlugin: networkPlugin
+      // networkPlugin: 'azure'
+      networkPluginMode: networkPlugin == 'none' ? null : 'Overlay'
+      networkDataplane: networkPlugin == 'none' ? null : networkDataplane
+      networkPolicy: networkPlugin == 'none' ? null : networkDataplane == 'cilium' ? 'cilium' : 'azure'
       outboundType: 'loadBalancer'
       // This is the cluster load balancer, not the outbound
       loadBalancerSku: 'Standard'

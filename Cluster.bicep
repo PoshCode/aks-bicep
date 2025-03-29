@@ -42,6 +42,14 @@ param maxPodsPerNode int = 40
 // @description('Optional. The address prefix (CIDR) for the vnet')
 // param nodeSubnetPrefix string = '10.100.10.0/24'
 
+@description('Optional. If not set, you must install your own CNI before the cluster will be functional (See README)')
+@allowed(['none', 'azure'])
+param networkPlugin string = 'none'
+
+@description('Optional. Only takes effect if the networkPlugin is set to "azure". Only the azure dataplane supports Windows containers, but this defaults to cilium.')
+@allowed(['cilium', 'azure'])
+param networkDataplane string = 'cilium'
+
 @description('Optional. Service CIDR for this cluster. Defaults to our shared service CIDR: 10.100.0.0/16')
 param serviceCidr string = '10.100.0.0/16'
 
@@ -279,6 +287,8 @@ module aks 'modules/managedCluster.bicep' = {
     AutoscaleProfile: AutoscaleProfile
     maxPodsPerNode: maxPodsPerNode
     // logAnalyticsWorkspaceResourceID: logAnalytics.id
+    networkPlugin: networkPlugin
+    networkDataplane: networkDataplane
     serviceCidr: serviceCidr
     podCidr: podCidr
     systemNodePoolOption: systemNodePoolOption
