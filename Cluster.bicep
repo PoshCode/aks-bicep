@@ -114,9 +114,9 @@ param additionalNodePoolProfiles array = []
 
 @description('''
 Optional. The base version of Kubernetes to use. Node pools are set to auto patch, so they only use the 'major.minor' part.
-Defaults to 1.28
+Defaults to 1.30
 ''')
-param kubernetesVersion string = '1.28'
+param kubernetesVersion string = '1.30'
 
 @description('''Optional. Controls automatic upgrades:
 - none. No automatic patching
@@ -218,7 +218,7 @@ module waitForRole 'modules/deploymentScript.bicep' = {
   params: {
     name: 'waitForRoleAssignment'
     location: location
-    azPowerShellVersion : '11.0'
+    azPowerShellVersion : '13.2'
     userAssignedIdentityResourceID: controlPlaneId.outputs.id
     timeout: 'PT60M'
     scriptContent : join([
@@ -251,8 +251,6 @@ module waitForRole 'modules/deploymentScript.bicep' = {
 //     roleName: 'Network Contributor'
 //   }
 // }
-
-
 
 
 module keyVault 'modules/keyVault.bicep' = {
@@ -313,10 +311,9 @@ module fluxId 'modules/userAssignedIdentity.bicep' = {
 @description('Optional. If true, skips Flux extension (you can still deploy it later, or by hand).')
 param installFluxManually bool = false
 
-// // Managed Flux
+// Managed Flux (obviously depends on the fluxId which depends on aks)
 module flux 'modules/flux.bicep' = if (!installFluxManually) {
   name: '${deploymentName}_flux'
-  dependsOn: [ aks, fluxId ]
   params: {
     baseName: baseName
     identityClientId: fluxId.outputs.clientId

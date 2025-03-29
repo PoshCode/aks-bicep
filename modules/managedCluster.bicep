@@ -198,7 +198,7 @@ param kubeletIdentityId string
 // param logAnalyticsWorkspaceResourceID string
 
 @description('A private AKS Kubernetes cluster')
-resource cluster 'Microsoft.ContainerService/managedClusters@2024-01-01' = {
+resource cluster 'Microsoft.ContainerService/managedClusters@2024-10-01' = {
   name: 'aks-${baseName}'
   location: location
   tags: tags
@@ -404,56 +404,54 @@ resource cluster 'Microsoft.ContainerService/managedClusters@2024-01-01' = {
 
 resource agentPools 'Microsoft.ContainerService/managedClusters/agentPools@2024-01-01' = [for (pool, index) in additionalNodePools: {
   // The default is 6 characters long because that's the max for Windows nodes
-  name: contains(pool, 'name') ? pool.name : format('npuser{0:D2}', index)
+  name: pool.?name ?? format('npuser{0:D2}', index)
   parent: cluster
   properties: {
-    availabilityZones: contains(pool, 'availabilityZones') ? pool.availabilityZones : []
+    availabilityZones: pool.?availabilityZones ?? []
     // capacityReservationGroupID: 'string'
-    count: contains(pool, 'count') ? pool.count : 1
+    count: pool.?count ?? 1
     // creationData: { sourceResourceId: 'string' }
-    enableAutoScaling: contains(pool, 'enableAutoScaling') ? pool.enableAutoScaling : true
+    enableAutoScaling: pool.?enableAutoScaling ?? true
     // enableCustomCATrust: contains(pool, 'enableCustomCATrust') ? pool.enableCustomCATrust : false
-    enableEncryptionAtHost: contains(pool, 'enableEncryptionAtHost') ? pool.enableEncryptionAtHost : false
-    enableFIPS: contains(pool, 'enableFIPS') ? pool.enableFIPS : false
-    enableNodePublicIP: contains(pool, 'enableNodePublicIP') ? pool.enableNodePublicIP : false
-    enableUltraSSD: contains(pool, 'enableUltraSSD') ? pool.enableUltraSSD : false
+    enableEncryptionAtHost: pool.?enableEncryptionAtHost ?? false
+    enableFIPS: pool.?enableFIPS ?? false
+    enableNodePublicIP: pool.?enableNodePublicIP ?? false
+    enableUltraSSD: pool.?enableUltraSSD ?? false
     // gpuInstanceProfile: 'string'
     // hostGroupID: 'string'
     // podSubnetID: 'string'
-    kubeletConfig: contains(pool, 'kubeletConfig') ? pool.kubeletConfig : null // If not null, causes error: CustomKubeletConfig or CustomLinuxOSConfig can not be changed for this operation.
-    kubeletDiskType: contains(pool, 'kubeletDiskType') ? pool.kubeletDiskType : 'OS'
-    linuxOSConfig: contains(pool, 'linuxOSConfig') ? pool.linuxOSConfig : null
-    maxCount: contains(pool, 'maxCount') ? pool.maxCount : 10 // int
-    maxPods: contains(pool, 'maxPods') ? pool.maxPods : maxPodsPerNode // int
-    minCount: contains(pool, 'minCount') ? pool.minCount : 1 // int
-    mode: contains(pool, 'mode') ? pool.mode : 'User' // 'string'
-    networkProfile: contains(pool, 'networkProfile') ? pool.networkProfile : {}
-
-    nodeLabels: contains(pool, 'nodeLabels') ? pool.nodeLabels : {} // {}
+    kubeletConfig: pool.?kubeletConfig ?? null
+    kubeletDiskType: pool.?kubeletDiskType ?? 'OS'
+    linuxOSConfig: pool.?linuxOSConfig ?? null
+    maxCount: pool.?maxCount ?? 10
+    maxPods: pool.?maxPods ?? maxPodsPerNode
+    minCount: pool.?minCount ?? 1
+    mode: pool.?mode ?? 'User'
+    networkProfile: pool.?networkProfile ?? {}
+    nodeLabels: pool.?nodeLabels ?? {}
     // nodePublicIPPrefixID: Doesn't support being empty
-    nodeTaints: contains(pool, 'nodeTaints') ? pool.nodeTaints : [] // ['string' ]
+    nodeTaints: pool.?nodeTaints ?? []
     orchestratorVersion: join(take(split(kubernetesVersion, '.'), 2), '.')
-    osDiskSizeGB: contains(pool, 'osDiskSizeGB') ? pool.osDiskSizeGB : 128 // int
-    osDiskType: contains(pool, 'osDiskType') ? pool.osDiskType : 'Ephemeral' // 'string'
-    osSKU: contains(pool, 'osSKU') ? pool.osSKU : 'Ubuntu' // 'string'
-    osType: contains(pool, 'osType') ? pool.osType : 'Linux' // 'string'
+    osDiskSizeGB: pool.?osDiskSizeGB ?? 128
+    osDiskType: pool.?osDiskType ?? 'Ephemeral'
+    osSKU: pool.?osSKU ?? 'Ubuntu'
+    osType: pool.?osType ?? 'Linux'
     // podSubnetID: 'string'
     // powerState: contains(pool,'powerState') ? pool.powerState : //
     // proximityPlacementGroupID: contains(pool,'proximityPlacementGroupID') ? pool.proximityPlacementGroupID : // 'string'
-    scaleDownMode: contains(pool, 'scaleDownMode') ? pool.scaleDownMode : 'Delete' // 'string'
-    scaleSetEvictionPolicy: contains(pool, 'scaleSetEvictionPolicy') ? pool.scaleSetEvictionPolicy : 'Delete' // 'string'
+    scaleDownMode: pool.?scaleDownMode ?? 'Delete'
+    scaleSetEvictionPolicy: pool.?scaleSetEvictionPolicy ?? 'Delete'
     // scaleSetPriority: contains(pool,'scaleSetPriority') ? pool.scaleSetPriority : 'Regular' // causes error:  Changing property 'properties.ScaleSetPriority' is not allowed.
     // spotMaxPrice: contains(pool,'spotMaxPrice') ? pool.spotMaxPrice : 0
-    type: contains(pool, 'type') ? pool.type : 'VirtualMachineScaleSets'
-    tags: contains(pool, 'tags') ? pool.tags : tags // tags
-    upgradeSettings: contains(pool, 'upgradeSettings') ? pool.upgradeSettings : { maxSurge: '33%' }
-    vmSize: contains(pool, 'vmSize') ? pool.vmSize : 'Standard_DS2_v2' // 'string'
+    type: pool.?type ?? 'VirtualMachineScaleSets'
+    tags: pool.?tags ?? tags
+    upgradeSettings: pool.?upgradeSettings ?? { maxSurge: '33%' }
+    vmSize: pool.?vmSize ?? 'Standard_DS2_v2'
     // vnetSubnetID: contains(pool, 'vnetSubnetID') ? pool.vnetSubnetID : nodeSubnetId // 'string'
     // windowsProfile: contains(pool,'windowsProfile') ? pool.windowsProfile : {} // { }
-    workloadRuntime: contains(pool, 'workloadRuntime') ? pool.workloadRuntime : 'OCIContainer' // 'string'
+    workloadRuntime: pool.?workloadRuntime ?? 'OCIContainer'
   }
 }]
-
 @description('The id of the AKS cluster')
 output id string = cluster.id
 

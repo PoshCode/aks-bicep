@@ -46,9 +46,9 @@ New-AzResourceGroupDeployment @Deployment -OutVariable Results
 
 ## GitOps Configuration
 
-One thing to note is that I am using a _public_ repository ([PoshCode/Cluster](/PoshCode/Cluster)) for my GitOps configuration. Because it's public, there's no need to configure a PAT token or anything for Flux to be able to access it.
+One thing to note is that I am using a _public_ repository ([PoshCode/Cluster](/PoshCode/Cluster)) for my GitOps configuration. Because it's public, there's no need to configure any sort of authentication tokens for Flux to be able to access it.
 
-I'm currently using the Azure Kubernetes Flux Extension to install Flux CD for GitOps. That dramatically simplifies everything, because the Bicep deployment is literally all that's required to deploy the working cluster. However, if you needed to configure the credentials, you would just pass `gitOpsGitUsername` and `gitOpsGitPassword` as part of the `TemplateParameterObject`. There is a feature coming later this year to Flux to support Workflow Identity for git authentication, but for now you need to use a read-only deploy token or something.
+I'm currently using the Azure Kubernetes Flux Extension to install Flux CD for GitOps, this dramatically simplifies configuration for Flux: when the Bicep deployment is complete, Flux is already running on the cluster.
 
 ### Manually bootstrapping Flux
 
@@ -58,31 +58,41 @@ If you wanted to install flux by hand on an existing cluster, it can be as simpl
 flux bootstrap github --owner PoshCode --repository cluster --path=clusters/poshcode
 ```
 
-But if you need to customize workload identity, it can get a lot more complex, because you'll need to patch the flux deployment.
+But if you need to customize workload identity, it can get a bit more complex, but Workload Identity is supported now for access to [Azure DevOps](https://fluxcd.io/flux/components/source/gitrepositories/#azure) and [GitHub](https://fluxcd.io/flux/components/source/gitrepositories/#github), at least.
 
 ## CURRENT STATUS WARNING
 
 I'm playing with Cilium Gateway API, so I've set the network plugin to "none" so that I can take control of the cilium install.
 
+Since the Gateway API in Cilium is part of their Service Mesh, it doesn't seem Azure's AKS team is too keen on getting it working out of the box, so I have to install it manually.
+
+NOTE: in order to use the Gateway API, you need to install the Gateway CRDs. That's handled after the cluster install by Flux.
+However, Cilium CNI has to be installed _before the nodes can even connect_, so it's basically a multipart install, which I have not automated.
+
+1. Install the cluster with the network plugin set to "none"
+2. Install Cilium CNI, and then the nodes will come up.
+3. Install the Gateway API CRDs, and then the Gateway API will be available.
+4. "Upgrade" cilium to enable the gateway API.
+
 Installing the cilium tools is as simple as downloading the right release from their GitHub release pages and unzipping.
 
 ```PowerShell
-Install-GitHubRelease cilium cilium
+Install-GitHubRelease cilium cilium-cli
 Install-GitHubRelease cilium hubble
 ```
 
 And installing it into the AKS cluster is just this, using the same `"rg-$name"` value as the resource group deployment:
 
 ```PowerShell
-cilium install --version 1.15.3 --set azure.resourceGroup="rg-$name" --set kubeProxyReplacement=true --set gatewayAPI.enabled=true
+cilium install --version 1.17.0 --set azure.resourceGroup="rg-$name" --set kubeProxyReplacement=true --set gatewayAPI.enabled=true
 ```
 
 If you want to complete the deployment in a single pass, you have to `Import-AzAksCredential` as soon as the cluster shows up in Azure, and then once `kubectl get nodes` shows all your nodes (they won't come up ready, because they won't have a network), you can run the `cilium install` while Azure is showing the Flux deployment is still running (it won't complete successfully until after cilium is installed, so if you don't run the install, it will fail after the time-out, and you'll have to re-run the deployment).
 
-Currently, I'm running it with prometheus enabled, which is more like:
+Once the cluster is up, and you've installed the Gateway API CRDs, you can run the `cilium upgrade` command to enable the Gateway API. I'm _also_ enabling hubble and prometheus:
 
 ```PowerShell
-cilium upgrade --version 1.15.3 --set azure.resourceGroup="rg-$name" `
+cilium install --version 1.17.0 --set azure.resourceGroup="rg-$name" `
     --set kubeProxyReplacement=true `
     --set gatewayAPI.enabled=true `
     --set hubble.enabled=true `
@@ -92,4 +102,4 @@ cilium upgrade --version 1.15.3 --set azure.resourceGroup="rg-$name" `
     --set hubble.metrics.enabled="{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip\,source_namespace\,source_workload\,destination_ip\,destination_namespace\,destination_workload\,traffic_direction}"
 ```
 
-I haven't even tried to automate this, because I'm honestly not sure I'll keep using cilium gateway, and I still hope the AKS team will expose settings for this option.
+Given it's been more than a year, and Azure's "CNI powered by Cilium" still lists L7 policy enforcement as a limmitation, I still have not tried to use that _and_ cilium gateway, so I should probably go ahead and get the Cilium Helm Chart into my GitOps repo 😒
