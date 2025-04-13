@@ -6,21 +6,27 @@ I've written my own templates for deploying AKS in [Azure Bicep](https://docs.mi
 
 ## Azure Prerequisites
 
-These pre-requisites are not part of the CI/CD build, because they only have to be done once, but the [Initialize-Azure](./Initialize-Azure.ps1) script is essentially idempotent and re-runnable.
+These pre-requisites are not part of the CI/CD build, because they only have to be done once, but the [`Initialize-Azure`](./Initialize-Azure.ps1) script is essentially idempotent and re-runnable.
 
 1. Enable some features in your Azure tenant (some of which are pre-release features as of this writing)
-2. Create a resource group in Azure to deploy to
+2. Create a resource group in Azure to deploy to (currently TWO resource groups, see [Azure Service Operator](#azure-service-operator) below)
 3. Create a service account in Azure for automation
 4. Assign the "owner" role on the resource group to the service account
 5. Create secrets in github for authentication as that service account
 
 The first step, enabling features, only has to be done once per subscription. For best practices, the remaining steps should be done once for each cluster, for security purposes. The idea is that the subscription owner runs this script by hand, and then the automated service account is restricted to deploying to this single resource group.
 
-See [Initialize-Azure](./Initialize-Azure.ps1)` for details. You might call it like this:
+See [`Initialize-Azure`](./Initialize-Azure.ps1) for details. You might call it like this:
 
 ```PowerShell
 ./Initialize-Azure -BaseName $name
 ```
+
+### Azure Service Operator
+
+I'm testing some things with the [Azure Service Operator](https://github.com/Azure/azure-service-operator), and for right now, this bicep creates a third resource group (i.e. if you create 'rg-poshcode' in Azure, AKS will create 'rg-poshcode-aks' and the bicep needs 'rg-poshcode-aso' to _contain_ the operator). That way it's creating a user assigned identity for the [Azure Service Operator](https://github.com/Azure/azure-service-operator) to use which has `Contributor` access just to the -aso resource group.
+
+In order to avoid giving the github service account additional access, I modified the Initialize-Azure PowerShell script instead.
 
 ## Deploying Infrastructure
 

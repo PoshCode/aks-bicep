@@ -381,6 +381,28 @@ module iam_flux_crypto 'modules/resourceRoleAssignment.bicep' = {
   }
 }
 
+// module rg 'modules/resourceGroup.bicep' = {
+//     scope: subscription()
+//     params: {
+//         name: '${resourceGroup().name}-aso'
+//         location: location
+//         tags: tags
+//     }
+// }
+
+module aso 'modules/azureServiceOperator.bicep' = {
+    name: '${deploymentName}_aso'
+    scope: resourceGroup('${resourceGroup().name}-aso')
+    params: {
+        deploymentNamePrefix: take(deploymentName, 47)
+        baseName: 'aso'
+        location: location
+        tags: tags
+        oidcIssuerUrl: aks.outputs.oidcIssuerUrl
+    }
+}
+
+
 // @description('Flux release namespace')
 // output fluxReleaseNamespace string = flux.outputs.fluxReleaseNamespace
 
