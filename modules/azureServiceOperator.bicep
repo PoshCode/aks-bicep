@@ -20,7 +20,7 @@ param deploymentNamePrefix string = take(deployment().name, 64-17)
 
 
 module aso 'userAssignedIdentity.bicep' = {
-  // name: '${deploymentNamePrefix}_uai_aso'
+  name: '${deploymentNamePrefix}_uai_aso'
   params: {
     baseName: baseName
     location: location
@@ -34,10 +34,10 @@ module aso 'userAssignedIdentity.bicep' = {
 
 
 module iam_azure_owner 'resourceRoleAssignment.bicep' = {
-  // name: '${deploymentNamePrefix}_iam_aso_operator'
+  name: '${deploymentNamePrefix}_iam_aso_operator'
   params: {
     principalIds: [ aso.outputs.principalId ]
-    resourceId: aso.outputs.id
+    resourceId: resourceGroup().id
     roleName: 'Contributor'
   }
 }

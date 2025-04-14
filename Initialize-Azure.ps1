@@ -22,6 +22,8 @@ param(
     [string]$Repository = "PoshCode/aks-bicep"
 )
 
+$BaseName = $BaseName.ToLowerInvariant()
+
 # The resource group to create. E.g. "rg-cluster"
 $resourceGroupName = @(
     # The first one should be the one where the cluster will be deployed

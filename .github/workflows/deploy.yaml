@@ -39,4 +39,4 @@ jobs:
         with:
           azPSVersion: "latest"
           inlineScript: |
-            $Results = New-AzResourceGroupDeployment -Name "aks-$(Get-Date -f yyyyMMddThhmmss)" -ResourceGroupName $Env:RESOURCEGROUP -TemplateFile ./Cluster.bicep -TemplateParameterObject @{ adminId = $Env:ADMINS }
+            $Results = New-AzResourceGroupDeployment -Name "$(Get-Date -f yyyyMMddTHHmm)_cluster" -ResourceGroupName $Env:RESOURCEGROUP -TemplateFile ./Cluster.bicep -TemplateParameterObject @{ adminId = $Env:ADMINS }
