@@ -32,12 +32,13 @@ module aso 'userAssignedIdentity.bicep' = {
   }
 }
 
+// TODO: I need to patch the resourceGroup role assignment from AVM
 
-module iam_azure_owner 'resourceRoleAssignment.bicep' = {
-  name: '${deploymentNamePrefix}_iam_aso_operator'
-  params: {
-    principalIds: [ aso.outputs.principalId ]
-    resourceId: resourceGroup().id
-    roleName: 'Contributor'
-  }
-}
+// module iam_azure_owner 'resourceRoleAssignment.bicep' = {
+//   name: '${deploymentNamePrefix}_iam_aso_operator'
+//   params: {
+//     principalIds: [ aso.outputs.principalId ]
+//     resourceId: resourceGroup().id
+//     roleName: 'Contributor'
+//   }
+// }
