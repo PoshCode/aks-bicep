@@ -188,7 +188,7 @@ var deploymentName = deployment().name
 // Used by the AKS agent pools to talk to the ACR
 // The actual cluster's identity does not need federation
 module kubeletId 'modules/userAssignedIdentity.bicep' = {
-  name: '${deploymentName}_uai_kubelet'
+  // name: '${deploymentName}_uai_kubelet'
   params: {
     baseName: '${baseName}-kubelet'
     location: location
@@ -202,7 +202,7 @@ module kubeletId 'modules/userAssignedIdentity.bicep' = {
 // IMPORTANT: If you're using your own Disks, StaticIP, KubeletId, Vnet or RouteTable ...
 // This user needs permissions on them
 module controlPlaneId 'modules/userAssignedIdentity.bicep' = {
-  name: '${deploymentName}_uai_controlPlaneId'
+  // name: '${deploymentName}_uai_controlPlaneId'
   params: {
     baseName: '${baseName}-aks'
     location: location
@@ -212,7 +212,7 @@ module controlPlaneId 'modules/userAssignedIdentity.bicep' = {
 
 // For the KubeletId, Managed Identity Operator
 module kubelet_iam 'modules/resourceRoleAssignment.bicep' = {
-  name: '${deploymentName}_kubelet_iam'
+  // name: '${deploymentName}_kubelet_iam'
   params: {
     principalIds: [ controlPlaneId.outputs.principalId ]
     resourceId: kubeletId.outputs.id
@@ -222,7 +222,7 @@ module kubelet_iam 'modules/resourceRoleAssignment.bicep' = {
 
 // We can't deploy the cluster until the control plane identity owns the kubelet identity
 module waitForRole 'modules/deploymentScript.bicep' = {
-  name: '${deploymentName}_wait_role'
+  // name: '${deploymentName}_wait_role'
   params: {
     name: 'waitForRoleAssignment'
     location: location
@@ -262,7 +262,7 @@ module waitForRole 'modules/deploymentScript.bicep' = {
 
 
 module keyVault 'modules/keyVault.bicep' = {
-  name: '${deploymentName}_keyvault'
+  // name: '${deploymentName}_keyvault'
   params: {
     baseName: baseName
     location: location
@@ -271,7 +271,7 @@ module keyVault 'modules/keyVault.bicep' = {
 }
 
 module aks 'modules/managedCluster.bicep' = {
-  name: '${deploymentName}_aks'
+  // name: '${deploymentName}_aks'
   dependsOn: [ waitForRole ]
   params: {
     baseName: baseName
@@ -301,7 +301,7 @@ module aks 'modules/managedCluster.bicep' = {
 }
 
 module fluxId 'modules/userAssignedIdentity.bicep' = {
-  name: '${deploymentName}_uai_fluxId'
+  // name: '${deploymentName}_uai_fluxId'
   params: {
     baseName: 'flux'
     location: location
@@ -323,7 +323,7 @@ param installFluxManually bool = false
 
 // Managed Flux (obviously depends on the fluxId which depends on aks)
 module flux 'modules/flux.bicep' = if (!installFluxManually) {
-  name: '${deploymentName}_flux'
+  // name: '${deploymentName}_flux'
   params: {
     baseName: baseName
     identityClientId: fluxId.outputs.clientId
@@ -346,7 +346,7 @@ module flux 'modules/flux.bicep' = if (!installFluxManually) {
 // }
 
 module iam_admin_aks 'modules/resourceRoleAssignment.bicep' = {
-  name: '${deploymentName}_iam_admin_aks'
+  // name: '${deploymentName}_iam_admin_aks'
   params: {
     principalIds: [ adminId ]
     resourceId: aks.outputs.id
@@ -355,7 +355,7 @@ module iam_admin_aks 'modules/resourceRoleAssignment.bicep' = {
 }
 
 module iam_admin_kv_secrets 'modules/resourceRoleAssignment.bicep' = {
-  name: '${deploymentName}_iam_admin_kv_secrets'
+  // name: '${deploymentName}_iam_admin_kv_secrets'
   params: {
     principalIds: [ adminId ]
     resourceId: keyVault.outputs.id
@@ -364,7 +364,7 @@ module iam_admin_kv_secrets 'modules/resourceRoleAssignment.bicep' = {
 }
 
 module iam_admin_kv_crypto 'modules/resourceRoleAssignment.bicep' = {
-  name: '${deploymentName}_iam_admin_kv_crypto'
+  // name: '${deploymentName}_iam_admin_kv_crypto'
   params: {
     principalIds: [ adminId ]
     resourceId: keyVault.outputs.id
@@ -373,7 +373,7 @@ module iam_admin_kv_crypto 'modules/resourceRoleAssignment.bicep' = {
 }
 
 module iam_flux_crypto 'modules/resourceRoleAssignment.bicep' = {
-  name: '${deploymentName}_iam_flux_crypto'
+  // name: '${deploymentName}_iam_flux_crypto'
   params: {
     principalIds: [ fluxId.outputs.principalId ]
     resourceId: keyVault.outputs.id

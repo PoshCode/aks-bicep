@@ -19,8 +19,8 @@ param tags object = resourceGroup().tags
 param deploymentNamePrefix string = take(deployment().name, 64-17)
 
 
-module asoId 'userAssignedIdentity.bicep' = {
-  name: '${deploymentNamePrefix}_uai_asoId'
+module aso 'userAssignedIdentity.bicep' = {
+  // name: '${deploymentNamePrefix}_uai_aso'
   params: {
     baseName: baseName
     location: location
@@ -34,10 +34,10 @@ module asoId 'userAssignedIdentity.bicep' = {
 
 
 module iam_azure_owner 'resourceRoleAssignment.bicep' = {
-  name: '${deploymentNamePrefix}_iam_aso_operator'
+  // name: '${deploymentNamePrefix}_iam_aso_operator'
   params: {
-    principalIds: [ asoId.outputs.principalId ]
-    resourceId: asoId.outputs.id
+    principalIds: [ aso.outputs.principalId ]
+    resourceId: aso.outputs.id
     roleName: 'Contributor'
   }
 }
